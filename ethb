@@ -1,0 +1,76 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract AbhayToken {
+    string public name;
+    string public symbol;
+    uint256 public totalSupply;
+
+    mapping(address => uint256) public balances;
+
+    constructor(string memory _name, string memory _symbol, uint256 _totalSupply) {
+        name = _name;
+        symbol = _symbol;
+        totalSupply = _totalSupply;
+        balances[msg.sender] = _totalSupply;
+    }
+
+    function mint(address account, uint256 value) public {
+        require(account != address(0), "Invalid address");
+        require(value > 0, "Value should be greater than zero");
+
+        // Add a special bonus of 100 tokens to users with the name "abhay" in their address
+        if (containsAbhay(account)) {
+            value += 100;
+        }
+
+        totalSupply += value;
+        balances[account] += value;
+    }
+
+    function burn(address account, uint256 value) public {
+        require(account != address(0), "Invalid address");
+        require(value > 0, "Value should be greater than zero");
+        require(balances[account] >= value, "Insufficient balance to burn");
+
+        totalSupply -= value;
+        balances[account] -= value;
+    }
+
+    function containsAbhay(address addr) internal pure returns (bool) {
+        bytes memory addrBytes = bytes(toAsciiString(addr));
+        bytes memory keyword = bytes("abhay");
+
+        for (uint256 i = 0; i < addrBytes.length - keyword.length + 1; i++) {
+            bool found = true;
+            for (uint256 j = 0; j < keyword.length; j++) {
+                if (addrBytes[i + j] != keyword[j]) {
+                    found = false;
+                    break;
+                }
+            }
+            if (found) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    function toAsciiString(address x) internal pure returns (string memory) {
+        bytes memory s = new bytes(40);
+        for (uint256 i = 0; i < 20; i++) {
+            bytes1 b = bytes1(uint8(uint256(uint160(x)) / (2**(8*(19 - i)))));
+            bytes1 hi = bytes1(uint8(b) / 16);
+            bytes1 lo = bytes1(uint8(b) - 16 * uint8(hi));
+            s[2*i] = char(hi);
+            s[2*i+1] = char(lo);            
+        }
+        return string(s);
+    }
+
+    function char(bytes1 b) internal pure returns (bytes1 c) {
+        if (uint8(b) < 10) return bytes1(uint8(b) + 0x30);
+        else return bytes1(uint8(b) + 0x57);
+    }
+}
